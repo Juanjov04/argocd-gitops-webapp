@@ -1,0 +1,52 @@
+$ kubectl get application -n argocd
+NAME     SYNC STATUS   HEALTH STATUS
+webapp   Synced        Healthy
+
+$ kubectl get deploy,svc,hpa,pods (con carga: escalado a 5)
+NAME                     READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/carga    3/3     3            3           4m14s
+deployment.apps/webapp   5/5     5            5           7m51s
+
+NAME                     TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+service/kubernetes       ClusterIP   10.96.0.1      <none>        443/TCP        6d4h
+service/webapp-service   NodePort    10.96.75.164   <none>        80:30080/TCP   7m51s
+
+NAME                                             REFERENCE           TARGETS        MINPODS   MAXPODS   REPLICAS   AGE
+horizontalpodautoscaler.autoscaling/webapp-hpa   Deployment/webapp   cpu: 76%/50%   2         5         5          7m51s
+
+NAME                          READY   STATUS    RESTARTS   AGE
+pod/carga-77579c95c9-85pnh    1/1     Running   0          4m14s
+pod/carga-77579c95c9-fpbjb    1/1     Running   0          4m14s
+pod/carga-77579c95c9-v8jt5    1/1     Running   0          4m14s
+pod/webapp-8477bcb7bb-7xkrt   1/1     Running   0          2m21s
+pod/webapp-8477bcb7bb-fb6rw   1/1     Running   0          7m51s
+pod/webapp-8477bcb7bb-mvclk   1/1     Running   0          2m6s
+pod/webapp-8477bcb7bb-nzwdj   1/1     Running   0          2m21s
+pod/webapp-8477bcb7bb-x7jmc   1/1     Running   0          7m51s
+
+$ kubectl top pods
+NAME                      CPU(cores)   MEMORY(bytes)   
+carga-77579c95c9-85pnh    3467m        14Mi            
+carga-77579c95c9-fpbjb    3401m        14Mi            
+carga-77579c95c9-v8jt5    3489m        14Mi            
+webapp-8477bcb7bb-7xkrt   78m          14Mi            
+webapp-8477bcb7bb-fb6rw   77m          14Mi            
+webapp-8477bcb7bb-mvclk   74m          14Mi            
+webapp-8477bcb7bb-nzwdj   77m          14Mi            
+webapp-8477bcb7bb-x7jmc   75m          15Mi            
+
+$ kubectl describe hpa webapp-hpa (eventos)
+  Type            Status  Reason               Message
+  ----            ------  ------               -------
+  AbleToScale     True    ScaleDownStabilized  recent recommendations were higher than current one, applying the highest recent recommendation
+  ScalingActive   True    ValidMetricFound     the HPA was able to successfully calculate a replica count from cpu resource utilization (percentage of request)
+  ScalingLimited  True    TooManyReplicas      the desired replica count is more than the maximum replica count
+Events:
+  Type     Reason                        Age                   From                       Message
+  ----     ------                        ----                  ----                       -------
+  Warning  FailedGetResourceMetric       7m37s                 horizontal-pod-autoscaler  failed to get cpu utilization: unable to get metrics for resource cpu: no metrics returned from resource metrics API
+  Warning  FailedComputeMetricsReplicas  7m37s                 horizontal-pod-autoscaler  invalid metrics (1 invalid out of 1), first error is: failed to get cpu resource metric value: failed to get cpu utilization: unable to get metrics for resource cpu: no metrics returned from resource metrics API
+  Normal   SuccessfulRescale             3m52s                 horizontal-pod-autoscaler  New size: 3; reason: cpu resource utilization (percentage of request) above target
+  Normal   SuccessfulRescale             3m7s (x3 over 3m37s)  horizontal-pod-autoscaler  New size: 4; reason: cpu resource utilization (percentage of request) above target
+  Normal   SuccessfulRescale             2m22s                 horizontal-pod-autoscaler  New size: 4; reason: All metrics below target
+  Normal   SuccessfulRescale             2m7s (x2 over 2m52s)  horizontal-pod-autoscaler  New size: 5; reason: All metrics below target
