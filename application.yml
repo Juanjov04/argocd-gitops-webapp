@@ -1,0 +1,22 @@
+# Aplicación de Argo CD (se aplica una sola vez con: kubectl apply -f application.yml)
+# Cambiar repoURL por la URL de tu repositorio público.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: webapp
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Juanjov04/argocd-gitops-webapp.git
+    targetRevision: main
+    path: manifests
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
