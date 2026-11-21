@@ -14,9 +14,16 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: default
+  # El HPA gestiona las réplicas; Argo CD no debe revertirlas a 2
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - RespectIgnoreDifferences=true
